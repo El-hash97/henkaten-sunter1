@@ -39,7 +39,7 @@ export function LoginModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =
         </div>
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
           <p className="text-sm text-slate-500">
-            Login hanya diperlukan untuk divisi selain Casting. Masukkan akun divisi Anda.
+            Login hanya diperlukan untuk admin/akun divisi. Masukkan akun divisi Anda.
           </p>
           <input
             type="text"

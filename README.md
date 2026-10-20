@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# Henkaten Sunter 1
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Clone aplikasi Henkaten (Vite + React 19 + Supabase, deploy ke Netlify) untuk kebutuhan **Sunter 1**.
 
-Currently, two official plugins are available:
+- Database baru, **mulai dari data kosong** — tidak ada record/opsi lama yang terbawa.
+- **Line Name & Departemen dicustom sendiri** per divisi lewat menu Pengaturan (tenant-admin).
+- Arsitektur multi-tenant: satu tenant default bernama `Sunter 1` untuk pemakaian tanpa login.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Setup Supabase (project baru)
 
-## React Compiler
+1. Buat **Supabase project baru** di [supabase.com](https://supabase.com) (jangan pakai project lama).
+2. Buka **SQL Editor** pada project baru, paste seluruh isi
+   [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), lalu jalankan.
+   Script ini membuat: tabel `tenants` (default tenant `Sunter 1`), `henkaten_records`,
+   `custom_line_names`, `custom_departments` (mulai kosong), RLS policies, dan
+   bucket storage `henkaten_photos` + `henkaten_trial_docs`.
+3. Ambil kredensial project baru:
+   - **Project URL** & **anon/publishable key** — Settings → API
+   - **service_role/secret key** — Settings → API (server-side saja, jangan ever dikirim ke client)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Env vars
 
-## Expanding the ESLint configuration
+Isi `.env.local` (lokal) — lihat `.env.example`:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+VITE_SUPABASE_URL=<url project supabase baru>
+VITE_SUPABASE_ANON_KEY=<anon key project baru>
+SUPABASE_SERVICE_ROLE_KEY=<secret key project baru>
+SUPER_ADMIN_PASSWORD=<password super-admin, bebas tapi kuat>
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Saat deploy ke Netlify (Settings → Environment variables), set 4 var yang sama
+(`VITE_-_prefixed` tetap perlu di-set di site env vars untuk build production).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Jalankan lokal
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
+
+## Setelah deploy (urutan pertama kali)
+
+1. Buka site production, scroll ke footer → klik **Super Admin** → masukkan
+   `SUPER_ADMIN_PASSWORD`.
+2. Di tab buat admin: pilih tenant `Sunter 1`, isi username + password untuk
+   **tenant-admin** pertama.
+3. Logout/belum perlu — klik ikon **Login** di navbar → login sebagai tenant-admin tersebut.
+4. Menu **Pengaturan** → tambahkan daftar **Line Name** & **Departemen** milik
+   Sunter 1 → beres, form input & rekap bisa dipakai (dropdown mulai dari kosong).
+
+> Detail flow super-admin/tenant-admin ada di `netlify/functions/create-tenant.ts`
+> dan `netlify/functions/create-user.ts`. RLS menjamin data tenant lain tidak terlihat.

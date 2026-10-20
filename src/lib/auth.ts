@@ -43,7 +43,7 @@ async function getDefaultTenantId(): Promise<string> {
 
 /**
  * Tenant aktif untuk request saat ini: tenant milik user yang login (dari
- * app_metadata JWT), atau tenant default (Casting) kalau belum login.
+ * app_metadata JWT), atau tenant default (Sunter 1) kalau belum login.
  * Ini yang dipakai setiap query/insert/update supaya konsisten dengan RLS
  * policy yang dipasang di Langkah 1 — jangan baca session.tenantId langsung
  * di komponen lain, selalu lewat fungsi ini.
