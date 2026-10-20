@@ -1,0 +1,99 @@
+import { useState, useEffect } from 'react';
+import { useStore } from './store/useStore';
+import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
+import { InputForm } from './components/InputForm';
+import { RekapData } from './components/RekapData';
+import { SettingsModal } from './components/SettingsModal';
+import { LoginModal } from './components/LoginModal';
+import { SuperAdminModal } from './components/SuperAdminModal';
+import { onAuthChange } from './lib/auth';
+import { clsx } from 'clsx';
+import { Toaster } from 'react-hot-toast';
+
+type Tab = 'input' | 'rekap';
+
+function App() {
+  const [activeTab, setActiveTab] = useState<Tab>('input');
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSuperAdminOpen, setIsSuperAdminOpen] = useState(false);
+
+  const fetchRecords = useStore((state) => state.fetchRecords);
+  const fetchOptions = useStore((state) => state.fetchOptions);
+
+  useEffect(() => {
+    fetchRecords();
+    fetchOptions();
+  }, [fetchRecords, fetchOptions]);
+
+  useEffect(() => {
+    // Login/logout mengganti tenant aktif (RLS men-scope ulang hasil query) -
+    // refetch supaya data yang tampil selalu sesuai tenant yang sedang aktif.
+    return onAuthChange(() => {
+      fetchRecords();
+      fetchOptions();
+    });
+  }, [fetchRecords, fetchOptions]);
+
+  const handleEdit = (id: string) => {
+    setEditingRecordId(id);
+    setActiveTab('input');
+  };
+
+  const handleSave = () => {
+    setEditingRecordId(null);
+    setActiveTab('rekap');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+      <Toaster position="top-right" />
+      <Navbar onOpenSettings={() => setIsSettingsOpen(true)} onOpenLogin={() => setIsLoginOpen(true)} />
+      
+      <main className="flex-1 w-full px-3 sm:px-6 py-3 sm:py-6 lg:py-8">
+
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
+          <button
+            onClick={() => setActiveTab('input')}
+            className={clsx(
+              "px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200",
+              activeTab === 'input'
+                ? "bg-navy-900 text-white shadow-md shadow-navy-900/20"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            )}
+          >
+            Input Form
+          </button>
+          <button
+            onClick={() => setActiveTab('rekap')}
+            className={clsx(
+              "px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200",
+              activeTab === 'rekap'
+                ? "bg-navy-900 text-white shadow-md shadow-navy-900/20"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            )}
+          >
+            Rekap Data
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-6 md:p-8 min-h-[600px] animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {activeTab === 'input' && <InputForm onSave={handleSave} editingRecordId={editingRecordId} />}
+          {activeTab === 'rekap' && <RekapData onEdit={handleEdit} />}
+        </div>
+        
+      </main>
+
+      <Footer onOpenSuperAdmin={() => setIsSuperAdminOpen(true)} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <SuperAdminModal isOpen={isSuperAdminOpen} onClose={() => setIsSuperAdminOpen(false)} />
+    </div>
+  );
+}
+
+export default App;
