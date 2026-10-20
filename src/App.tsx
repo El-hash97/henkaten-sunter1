@@ -68,7 +68,7 @@ function App() {
 
         {/* Tab Content */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-6 md:p-8 min-h-[600px] animate-in fade-in slide-in-from-bottom-2 duration-300">
-          {activeTab === 'input' && <InputForm onSave={handleSave} editingRecordId={editingRecordId} />}
+          {activeTab === 'input' && <InputForm key={editingRecordId ?? 'new'} onSave={handleSave} editingRecordId={editingRecordId} />}
           {activeTab === 'rekap' && <RekapData onEdit={handleEdit} />}
         </div>
         

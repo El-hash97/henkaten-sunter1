@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useStore } from '../store/useStore';
+import { errorMessage } from '../lib/api';
 import { format } from 'date-fns';
 import { Search, Edit2, Printer, Trash2, Loader2, ListChecks, AlertTriangle, AlertCircle, CheckCircle2, X, FileDown, Upload, FileText, RefreshCw, Eye, Download } from 'lucide-react';
 import type { RiskLevel, HenkatenRecord, LineName, Category } from '../types';
@@ -205,8 +206,8 @@ export function RekapData({ onEdit }: { onEdit: (id: string) => void }) {
     try {
       await uploadTrialDocument(id, file);
       toast.success('Dokumen trial berhasil diupload');
-    } catch (err: any) {
-      toast.error(err.message || 'Gagal mengupload dokumen trial');
+    } catch (err) {
+      toast.error(errorMessage(err) || 'Gagal mengupload dokumen trial');
     } finally {
       setUploadingId(null);
     }
@@ -218,8 +219,8 @@ export function RekapData({ onEdit }: { onEdit: (id: string) => void }) {
     try {
       await deleteTrialDocument(id);
       toast.success('Dokumen trial berhasil dihapus');
-    } catch (err: any) {
-      toast.error(err.message || 'Gagal menghapus dokumen trial');
+    } catch (err) {
+      toast.error(errorMessage(err) || 'Gagal menghapus dokumen trial');
     } finally {
       setDeletingDocId(null);
     }
@@ -246,8 +247,8 @@ export function RekapData({ onEdit }: { onEdit: (id: string) => void }) {
     if (value === (previous ?? '')) return;
     try {
       await updateRecord(id, { keterangan: value });
-    } catch (err: any) {
-      toast.error(err.message || 'Gagal menyimpan keterangan');
+    } catch (err) {
+      toast.error(errorMessage(err) || 'Gagal menyimpan keterangan');
     }
   };
 
@@ -256,8 +257,8 @@ export function RekapData({ onEdit }: { onEdit: (id: string) => void }) {
       try {
         await deleteRecord(id);
         toast.success('Data berhasil dihapus');
-      } catch (err: any) {
-        toast.error(err.message || 'Gagal menghapus data');
+      } catch (err) {
+        toast.error(errorMessage(err) || 'Gagal menghapus data');
       }
     }
   };

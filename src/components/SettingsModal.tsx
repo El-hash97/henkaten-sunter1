@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Settings as SettingsIcon, Trash2, Plus, Loader2, AlertTriangle, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useStore } from '../store/useStore';
+import { errorMessage } from '../lib/api';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined;
 
@@ -60,8 +61,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
       await addLineName(trimmed);
       setNewLineName('');
       toast.success('Line Name berhasil ditambahkan.');
-    } catch (err: any) {
-      toast.error(err.message || 'Gagal menambahkan Line Name.');
+    } catch (err) {
+      toast.error(errorMessage(err) || 'Gagal menambahkan Line Name.');
     } finally {
       setIsAddingLine(false);
     }
@@ -83,8 +84,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
       await addDepartment(trimmed);
       setNewDepartment('');
       toast.success('Departemen berhasil ditambahkan.');
-    } catch (err: any) {
-      toast.error(err.message || 'Gagal menambahkan Departemen.');
+    } catch (err) {
+      toast.error(errorMessage(err) || 'Gagal menambahkan Departemen.');
     } finally {
       setIsAddingDept(false);
     }
@@ -101,8 +102,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
       }
       toast.success('Opsi berhasil dihapus.');
       setDeleteTarget(null);
-    } catch (err: any) {
-      toast.error(err.message || 'Gagal menghapus opsi.');
+    } catch (err) {
+      toast.error(errorMessage(err) || 'Gagal menghapus opsi.');
     } finally {
       setIsDeleting(false);
     }

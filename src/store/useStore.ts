@@ -1,11 +1,6 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import type { HenkatenRecord } from '../types';
-import { supabase } from '../lib/supabase';
-
-interface CustomOption {
-  id: string;
-  name: string;
-}
+import { api, type CustomOption } from '../lib/api';
 
 interface AppState {
   records: HenkatenRecord[];
@@ -26,6 +21,49 @@ interface AppState {
   deleteDepartment: (id: string) => Promise<void>;
 }
 
+type RecordPatch = Record<string, unknown>;
+
+interface DbRecordRow {
+  id: string;
+  line_name: string;
+  date_start: string;
+  date_finish: string;
+  category: string | null;
+  henkaten_info: string | null;
+  risk_level: string | null;
+  tujuan_henkaten: string | null;
+  pic_name: string | null;
+  departemen: string | null;
+  photo: string | null;
+  trial_document: string | null;
+  trial_document_name: string | null;
+  keterangan: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+const errorMessage = (err: unknown): string =>
+  err instanceof Error ? err.message : String(err);
+
+const toRecord = (d: DbRecordRow): HenkatenRecord => ({
+  id: d.id,
+  lineName: d.line_name,
+  dateStart: d.date_start,
+  dateFinish: d.date_finish,
+  category: d.category as HenkatenRecord['category'],
+  henkatenInfo: d.henkaten_info ?? '',
+  riskLevel: d.risk_level as HenkatenRecord['riskLevel'],
+  tujuanHenkaten: d.tujuan_henkaten ?? '',
+  picName: d.pic_name ?? '',
+  departemen: d.departemen ?? '',
+  photo: d.photo,
+  trialDocument: d.trial_document,
+  trialDocumentName: d.trial_document_name,
+  keterangan: d.keterangan,
+  createdBy: d.created_by,
+  createdAt: d.created_at,
+});
+
 export const useStore = create<AppState>((set, get) => ({
   records: [],
   isLoading: false,
@@ -36,56 +74,18 @@ export const useStore = create<AppState>((set, get) => ({
   fetchRecords: async () => {
     set({ isLoading: true, error: null });
     try {
-      const { data, error } = await supabase
-        .from('henkaten_records')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedData = data.map((d: any) => ({
-        id: d.id,
-        lineName: d.line_name,
-        dateStart: d.date_start,
-        dateFinish: d.date_finish,
-        category: d.category,
-        henkatenInfo: d.henkaten_info,
-        riskLevel: d.risk_level,
-        tujuanHenkaten: d.tujuan_henkaten,
-        picName: d.pic_name,
-        departemen: d.departemen,
-        photo: d.photo,
-        trialDocument: d.trial_document,
-        trialDocumentName: d.trial_document_name,
-        keterangan: d.keterangan,
-        createdBy: d.created_by,
-        createdAt: d.created_at,
-      }));
-
-      set({ records: formattedData, isLoading: false });
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
+      const data = (await api.listRecords()) as unknown as DbRecordRow[];
+      set({ records: data.map(toRecord), isLoading: false });
+    } catch (err) {
+      set({ error: errorMessage(err), isLoading: false });
     }
   },
 
   addRecord: async (record, photoFile) => {
     try {
-      let photoUrl = null;
-      if (photoFile) {
-        const fileExt = photoFile.name.split('.').pop();
-        const filePath = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('henkaten_photos')
-          .upload(filePath, photoFile);
-        if (uploadError) throw uploadError;
+      const photo = photoFile ? await api.uploadFile('photos', photoFile) : null;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('henkaten_photos')
-          .getPublicUrl(filePath);
-        photoUrl = publicUrl;
-      }
-
-      const dbRecord = {
+      await api.createRecord({
         line_name: record.lineName,
         date_start: record.dateStart,
         date_finish: record.dateFinish,
@@ -95,24 +95,19 @@ export const useStore = create<AppState>((set, get) => ({
         tujuan_henkaten: record.tujuanHenkaten,
         pic_name: record.picName,
         departemen: record.departemen,
-        photo: photoUrl,
+        photo,
         created_by: record.createdBy,
-      };
+      });
 
-      const { error } = await supabase
-        .from('henkaten_records')
-        .insert([dbRecord]);
-
-      if (error) throw error;
       await get().fetchRecords();
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
 
   updateRecord: async (id, updatedRecord, newPhotoFile) => {
     try {
-      const dbRecord: any = {};
+      const dbRecord: RecordPatch = {};
       if (updatedRecord.lineName !== undefined) dbRecord.line_name = updatedRecord.lineName;
       if (updatedRecord.dateStart !== undefined) dbRecord.date_start = updatedRecord.dateStart;
       if (updatedRecord.dateFinish !== undefined) dbRecord.date_finish = updatedRecord.dateFinish;
@@ -125,144 +120,90 @@ export const useStore = create<AppState>((set, get) => ({
       if (updatedRecord.createdBy !== undefined) dbRecord.created_by = updatedRecord.createdBy;
       if (updatedRecord.keterangan !== undefined) dbRecord.keterangan = updatedRecord.keterangan;
 
-      // Handle photo update
       if (newPhotoFile) {
-        const fileExt = newPhotoFile.name.split('.').pop();
-        const filePath = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('henkaten_photos')
-          .upload(filePath, newPhotoFile);
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('henkaten_photos')
-          .getPublicUrl(filePath);
-        dbRecord.photo = publicUrl;
+        dbRecord.photo = await api.uploadFile('photos', newPhotoFile);
       } else if (updatedRecord.photo !== undefined) {
         dbRecord.photo = updatedRecord.photo;
       }
 
-      const { error } = await supabase
-        .from('henkaten_records')
-        .update(dbRecord)
-        .eq('id', id);
-
-      if (error) throw error;
+      await api.updateRecord(id, dbRecord);
       await get().fetchRecords();
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
 
   deleteRecord: async (id) => {
     try {
-      const { error } = await supabase
-        .from('henkaten_records')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await api.deleteRecord(id);
       set((state) => ({ records: state.records.filter((r) => r.id !== id) }));
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
 
   uploadTrialDocument: async (id, file) => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('henkaten_trial_docs')
-        .upload(filePath, file);
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('henkaten_trial_docs')
-        .getPublicUrl(filePath);
-
-      const { error } = await supabase
-        .from('henkaten_records')
-        .update({ trial_document: publicUrl, trial_document_name: file.name })
-        .eq('id', id);
-
-      if (error) throw error;
+      const url = await api.uploadFile('docs', file);
+      await api.updateRecord(id, { trial_document: url, trial_document_name: file.name });
       await get().fetchRecords();
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
+
   deleteTrialDocument: async (id) => {
     try {
-      const { error } = await supabase
-        .from('henkaten_records')
-        .update({ trial_document: null, trial_document_name: null })
-        .eq('id', id);
-
-      if (error) throw error;
+      await api.updateRecord(id, { trial_document: null, trial_document_name: null });
       await get().fetchRecords();
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
 
   fetchOptions: async () => {
     try {
-      const [lineNamesRes, departmentsRes] = await Promise.all([
-        supabase.from('custom_line_names').select('id, name').order('name', { ascending: true }),
-        supabase.from('custom_departments').select('id, name').order('name', { ascending: true }),
-      ]);
-
-      if (lineNamesRes.error) throw lineNamesRes.error;
-      if (departmentsRes.error) throw departmentsRes.error;
-
-      set({
-        customLineNames: lineNamesRes.data ?? [],
-        customDepartments: departmentsRes.data ?? [],
-      });
-    } catch (err: any) {
+      const { lineNames, departments } = await api.listOptions();
+      set({ customLineNames: lineNames, customDepartments: departments });
+    } catch (err) {
       console.error(err);
-      set({ error: err.message });
+      set({ error: errorMessage(err) });
     }
   },
 
   addLineName: async (name) => {
     try {
-      const { error } = await supabase.from('custom_line_names').insert([{ name }]);
-      if (error) throw error;
+      await api.addLineName(name);
       await get().fetchOptions();
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
 
   deleteLineName: async (id) => {
     try {
-      const { error } = await supabase.from('custom_line_names').delete().eq('id', id);
-      if (error) throw error;
+      await api.deleteLineName(id);
       set((state) => ({ customLineNames: state.customLineNames.filter((c) => c.id !== id) }));
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
 
   addDepartment: async (name) => {
     try {
-      const { error } = await supabase.from('custom_departments').insert([{ name }]);
-      if (error) throw error;
+      await api.addDepartment(name);
       await get().fetchOptions();
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
 
   deleteDepartment: async (id) => {
     try {
-      const { error } = await supabase.from('custom_departments').delete().eq('id', id);
-      if (error) throw error;
+      await api.deleteDepartment(id);
       set((state) => ({ customDepartments: state.customDepartments.filter((c) => c.id !== id) }));
-    } catch (err: any) {
-      throw new Error(err.message);
+    } catch (err) {
+      throw new Error(errorMessage(err));
     }
   },
 }));

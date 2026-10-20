@@ -8,10 +8,13 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "db:migrate": "node --env-file=.env.local scripts/neon-migrate.mjs",
     "recompress-photos": "node --env-file=.env.local scripts/recompress-photos.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.101.1",
+    "@aws-sdk/client-s3": "^3.1153.0",
+    "@aws-sdk/s3-request-presigner": "^3.1153.0",
+    "@neondatabase/serverless": "^1.2.0",
     "@types/papaparse": "^5.5.2",
     "@types/uuid": "^10.0.0",
     "clsx": "^2.1.1",

@@ -2,8 +2,9 @@ import { useForm } from 'react-hook-form';
 import { Upload, X, Check, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { compressImage } from '../lib/compressImage';
+import { errorMessage } from '../lib/api';
 import toast from 'react-hot-toast';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import type { HenkatenRecord } from '../types';
 
 type FormData = Omit<HenkatenRecord, 'id' | 'createdAt' | 'createdBy'>;
@@ -16,43 +17,28 @@ export function InputForm({ onSave, editingRecordId = null }: { onSave: () => vo
   const customDepartments = useStore((state) => state.customDepartments);
   const lineNameOptions = customLineNames.map((c) => c.name);
   const departmentOptions = customDepartments.map((c) => c.name);
+  const editingRecord = editingRecordId
+    ? records.find((r) => r.id === editingRecordId)
+    : undefined;
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormData>({
     defaultValues: {
-      lineName: '',
-      dateStart: '',
-      dateFinish: '',
-      category: '',
-      henkatenInfo: '',
-      riskLevel: '',
-      tujuanHenkaten: '',
-      picName: '',
-      departemen: '',
-      photo: null,
+      lineName: editingRecord?.lineName ?? '',
+      dateStart: editingRecord?.dateStart ?? '',
+      dateFinish: editingRecord?.dateFinish ?? '',
+      category: editingRecord?.category ?? '',
+      henkatenInfo: editingRecord?.henkatenInfo ?? '',
+      riskLevel: editingRecord?.riskLevel ?? '',
+      tujuanHenkaten: editingRecord?.tujuanHenkaten ?? '',
+      picName: editingRecord?.picName ?? '',
+      departemen: editingRecord?.departemen ?? '',
+      photo: editingRecord?.photo ?? null,
     }
   });
 
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(editingRecord?.photo ?? null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (editingRecordId) {
-      const record = records.find(r => r.id === editingRecordId);
-      if (record) {
-        reset(record);
-        setPhotoPreview(record.photo);
-        setPhotoFile(null);
-      }
-    } else {
-      reset({
-        lineName: '', dateStart: '', dateFinish: '', category: '', henkatenInfo: '', 
-        riskLevel: '', tujuanHenkaten: '', picName: '', departemen: '', photo: null
-      });
-      setPhotoPreview(null);
-      setPhotoFile(null);
-    }
-  }, [editingRecordId, records, reset]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -92,9 +78,9 @@ export function InputForm({ onSave, editingRecordId = null }: { onSave: () => vo
       setPhotoFile(null);
       setIsSaving(false);
       onSave();
-    } catch (err: any) {
+    } catch (err) {
       setIsSaving(false);
-      toast.error(err.message || 'Terjadi kesalahan saat menyimpan data.');
+      toast.error(errorMessage(err) || 'Terjadi kesalahan saat menyimpan data.');
     }
   };
 
