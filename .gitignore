@@ -30,3 +30,7 @@ dist-ssr
 .netlify
 deno.lock
 .neon
+
+.vercel
+.env*.local
+!.env.example

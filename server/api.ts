@@ -1,5 +1,5 @@
-import { getSql } from './db';
-import { presignUpload, publicUrl, type BucketKey } from './storage';
+import { getSql } from './db.js';
+import { presignUpload, publicUrl, type BucketKey } from './storage.js';
 
 export class HttpError extends Error {
   status: number;

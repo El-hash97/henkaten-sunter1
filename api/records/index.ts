@@ -1,4 +1,4 @@
-import { createRecord, json, listRecords, withErrors } from '../../server/api';
+import { createRecord, json, listRecords, withErrors } from '../../server/api.js';
 
 export const GET = () => withErrors(async () => json(await listRecords()));
 

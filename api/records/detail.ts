@@ -1,4 +1,4 @@
-import { deleteRecord, json, updateRecord, withErrors } from '../../server/api';
+import { deleteRecord, json, updateRecord, withErrors } from '../../server/api.js';
 
 export const PATCH = (request: Request) =>
   withErrors(async () => json(await updateRecord(request)));

@@ -10,8 +10,8 @@ import {
   listRecords,
   updateRecord,
   withErrors,
-} from './api';
-import { nodeToWebRequest, sendWebResponse } from './node-adapter';
+} from './api.js';
+import { nodeToWebRequest, sendWebResponse } from './node-adapter.js';
 
 type RouteHandler = (request: Request) => Promise<Response>;
 
