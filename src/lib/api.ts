@@ -55,20 +55,20 @@ export const api = {
   createRecord: (record: Record<string, unknown>) =>
     request<Record<string, unknown>>('/records', { method: 'POST', body: JSON.stringify(record) }),
   updateRecord: (id: string, patch: Record<string, unknown>) =>
-    request<Record<string, unknown>>(`/records/${id}`, {
+    request<Record<string, unknown>>(`/records/detail?id=${id}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
-  deleteRecord: (id: string) => request<{ ok: true }>(`/records/${id}`, { method: 'DELETE' }),
+  deleteRecord: (id: string) => request<{ ok: true }>(`/records/detail?id=${id}`, { method: 'DELETE' }),
 
   listOptions: () => request<{ lineNames: CustomOption[]; departments: CustomOption[] }>('/options'),
   addLineName: (name: string) =>
     request<CustomOption>('/line-names', { method: 'POST', body: JSON.stringify({ name }) }),
-  deleteLineName: (id: string) => request<{ ok: true }>(`/line-names/${id}`, { method: 'DELETE' }),
+  deleteLineName: (id: string) => request<{ ok: true }>(`/line-names?id=${id}`, { method: 'DELETE' }),
   addDepartment: (name: string) =>
     request<CustomOption>('/departments', { method: 'POST', body: JSON.stringify({ name }) }),
   deleteDepartment: (id: string) =>
-    request<{ ok: true }>(`/departments/${id}`, { method: 'DELETE' }),
+    request<{ ok: true }>(`/departments?id=${id}`, { method: 'DELETE' }),
 
   uploadFile,
 };
