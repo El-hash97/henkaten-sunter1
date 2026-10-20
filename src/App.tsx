@@ -5,9 +5,6 @@ import { Footer } from './components/Footer';
 import { InputForm } from './components/InputForm';
 import { RekapData } from './components/RekapData';
 import { SettingsModal } from './components/SettingsModal';
-import { LoginModal } from './components/LoginModal';
-import { SuperAdminModal } from './components/SuperAdminModal';
-import { onAuthChange } from './lib/auth';
 import { clsx } from 'clsx';
 import { Toaster } from 'react-hot-toast';
 
@@ -17,8 +14,6 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('input');
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isSuperAdminOpen, setIsSuperAdminOpen] = useState(false);
 
   const fetchRecords = useStore((state) => state.fetchRecords);
   const fetchOptions = useStore((state) => state.fetchOptions);
@@ -26,15 +21,6 @@ function App() {
   useEffect(() => {
     fetchRecords();
     fetchOptions();
-  }, [fetchRecords, fetchOptions]);
-
-  useEffect(() => {
-    // Login/logout mengganti tenant aktif (RLS men-scope ulang hasil query) -
-    // refetch supaya data yang tampil selalu sesuai tenant yang sedang aktif.
-    return onAuthChange(() => {
-      fetchRecords();
-      fetchOptions();
-    });
   }, [fetchRecords, fetchOptions]);
 
   const handleEdit = (id: string) => {
@@ -50,7 +36,7 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
       <Toaster position="top-right" />
-      <Navbar onOpenSettings={() => setIsSettingsOpen(true)} onOpenLogin={() => setIsLoginOpen(true)} />
+      <Navbar onOpenSettings={() => setIsSettingsOpen(true)} />
       
       <main className="flex-1 w-full px-3 sm:px-6 py-3 sm:py-6 lg:py-8">
 
@@ -88,10 +74,8 @@ function App() {
         
       </main>
 
-      <Footer onOpenSuperAdmin={() => setIsSuperAdminOpen(true)} />
+      <Footer />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-      <SuperAdminModal isOpen={isSuperAdminOpen} onClose={() => setIsSuperAdminOpen(false)} />
     </div>
   );
 }
